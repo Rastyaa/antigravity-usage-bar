@@ -48,4 +48,4 @@ Look for the "A" icon in your system tray (usually top-right for GNOME or bottom
 
 ## 🏗️ Architecture
 
-Originally built as a Python (PyQt6) script, this project has been fully migrated to a Node.js/TypeScript architecture using `systray2`. It features a custom slot-based menu update system to ensure dynamic arrays render correctly on Linux GTK environments.
+Othis project has been fully build with Node.js/TypeScript architecture using `systray2`. It features a custom slot-based menu update system to ensure dynamic arrays render correctly on Linux GTK environments.
