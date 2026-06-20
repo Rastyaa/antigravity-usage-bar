@@ -1,94 +1,76 @@
 import sys
 import random
-from PyQt6.QtCore import Qt, QTimer, QPoint
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QProgressBar
-from PyQt6.QtGui import QFont, QColor
-import requests
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle
+from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction
 
-class AntigravityWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
+class AntigravityTrayApp:
+    def __init__(self, app):
+        self.app = app
         
-        # Setup Timer for Auto-Refresh (every 5 seconds for demo)
-        self.timer = QTimer(self)
+        # Inisialisasi System Tray
+        self.tray_icon = QSystemTrayIcon()
+        
+        # Buat ikon secara programatik agar tidak butuh file eksternal
+        self.tray_icon.setIcon(self.create_icon())
+        self.tray_icon.setVisible(True)
+        
+        # Buat Context Menu
+        self.menu = QMenu()
+        
+        # Menu Item: Menampilkan Token (dinamis)
+        self.usage_action = QAction("Loading tokens...")
+        self.usage_action.setEnabled(False) # Dibuat disable karena hanya untuk info
+        self.menu.addAction(self.usage_action)
+        
+        self.menu.addSeparator()
+        
+        # Menu Item: Quit
+        self.quit_action = QAction("Quit")
+        self.quit_action.triggered.connect(self.app.quit)
+        self.menu.addAction(self.quit_action)
+        
+        # Set Menu ke Tray
+        self.tray_icon.setContextMenu(self.menu)
+        
+        # Setup Timer for Auto-Refresh (setiap 5 detik untuk demo)
+        self.timer = QTimer()
         self.timer.timeout.connect(self.fetch_usage_data)
         self.timer.start(5000)
         
         # Initial Fetch
         self.fetch_usage_data()
 
-    def initUI(self):
-        # Frameless Window, Stays on Bottom (like a desktop widget), Tool (hides from taskbar usually)
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint | 
-            Qt.WindowType.WindowStaysOnTopHint
-        )
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+    def create_icon(self):
+        """Membuat ikon simpel berupa lingkaran dengan huruf 'A' di tengahnya"""
+        pixmap = QPixmap(64, 64)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
-        self.resize(300, 150)
-
-        # Layout
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(20, 20, 20, 20)
-
-        # Background Frame styling (Glassmorphism look)
-        self.setStyleSheet("""
-            QWidget {
-                background-color: rgba(25, 25, 30, 220);
-                border-radius: 15px;
-                border: 1px solid rgba(255, 255, 255, 30);
-                color: white;
-            }
-        """)
-
-        # Title Label
-        self.title_label = QLabel("Antigravity Usage")
-        self.title_label.setFont(QFont("Inter", 14, QFont.Weight.Bold))
-        self.title_label.setStyleSheet("background-color: transparent; border: none;")
-        self.layout.addWidget(self.title_label)
-
-        # Usage Text Label
-        self.usage_label = QLabel("Loading tokens...")
-        self.usage_label.setFont(QFont("Inter", 11))
-        self.usage_label.setStyleSheet("background-color: transparent; border: none; color: #a0a0a0;")
-        self.layout.addWidget(self.usage_label)
-
-        # Progress Bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setFixedHeight(8)
-        self.progress_bar.setTextVisible(False)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                border: none;
-                border-radius: 4px;
-                background-color: rgba(255, 255, 255, 20);
-            }
-            QProgressBar::chunk {
-                border-radius: 4px;
-                background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #8A2BE2, stop: 1 #00BFFF);
-            }
-        """)
-        self.layout.addWidget(self.progress_bar)
-
-        # Status / Refreshing indicator
-        self.status_label = QLabel("Last updated: Just now")
-        self.status_label.setFont(QFont("Inter", 9))
-        self.status_label.setStyleSheet("background-color: transparent; border: none; color: #606060;")
-        self.layout.addWidget(self.status_label)
-
-        # Variables for dragging the frameless window
-        self.old_pos = None
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Gambar background lingkaran (Warna Ungu/Biru)
+        painter.setBrush(QColor(138, 43, 226)) # BlueViolet
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(4, 4, 56, 56)
+        
+        # Tulis huruf 'A'
+        painter.setPen(QColor("white"))
+        font = QFont("Arial", 32, QFont.Weight.Bold)
+        painter.setFont(font)
+        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "A")
+        
+        painter.end()
+        return QIcon(pixmap)
 
     def fetch_usage_data(self):
         """
         MOCK FETCH FUNCTION
-        Replace this logic with an actual API call once the endpoint is available.
+        Ganti logika ini dengan pemanggilan API jika endpoint sudah tersedia.
         e.g., response = requests.get('YOUR_API_URL', headers={'Authorization': 'Bearer YOUR_TOKEN'})
         """
-        # --- MOCK DATA GENERATION ---
         mock_limit = 1000000
-        # Randomly increment usage to simulate real-time activity
+        # Tambah usage secara random untuk simulasi
         current_usage = getattr(self, 'current_mock_usage', 450000)
         current_usage += random.randint(100, 5000)
         if current_usage > mock_limit:
@@ -96,33 +78,19 @@ class AntigravityWidget(QWidget):
             
         self.current_mock_usage = current_usage
         
-        # Update UI
-        percent = int((current_usage / mock_limit) * 100)
-        self.progress_bar.setValue(percent)
-        self.usage_label.setText(f"{current_usage:,} / {mock_limit:,} Tokens used")
-        self.status_label.setText("Updated automatically")
-
-    # Mouse events to allow dragging the borderless window
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.old_pos = event.globalPosition().toPoint()
-
-    def mouseMoveEvent(self, event):
-        if self.old_pos is not None:
-            delta = QPoint(event.globalPosition().toPoint() - self.old_pos)
-            self.move(self.x() + delta.x(), self.y() + delta.y())
-            self.old_pos = event.globalPosition().toPoint()
-
-    def mouseReleaseEvent(self, event):
-        self.old_pos = None
+        text = f"{current_usage:,} / {mock_limit:,} Tokens"
+        
+        # Update Tooltip (muncul saat di-hover)
+        self.tray_icon.setToolTip(f"Antigravity Usage:\n{text}")
+        
+        # Update teks di dalam menu
+        self.usage_action.setText(text)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     
-    # Optional: Set global application font
-    font = QFont("Inter", 10)
-    app.setFont(font)
+    # Pastikan aplikasi tidak ditutup otomatis kalau window ditutup (karena tidak ada window)
+    app.setQuitOnLastWindowClosed(False)
     
-    widget = AntigravityWidget()
-    widget.show()
+    tray_app = AntigravityTrayApp(app)
     sys.exit(app.exec())
