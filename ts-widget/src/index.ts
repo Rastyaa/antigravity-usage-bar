@@ -53,7 +53,15 @@ function createProgressBar(pct: number): string {
     const totalBlocks = 10;
     const filledBlocks = Math.round((pct / 100) * totalBlocks);
     const emptyBlocks = totalBlocks - filledBlocks;
-    const bar = '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
+    
+    let fillChar = '🟩';
+    if (pct < 20) fillChar = '🟥';
+    else if (pct < 50) fillChar = '🟧';
+    else if (pct < 75) fillChar = '🟨';
+    
+    const emptyChar = '⬜'; // or ⬛
+    
+    const bar = fillChar.repeat(filledBlocks) + emptyChar.repeat(emptyBlocks);
     return `[${bar}]`;
 }
 
