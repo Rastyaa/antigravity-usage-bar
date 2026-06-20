@@ -22,8 +22,7 @@ class AntigravityWidget(QWidget):
         # Frameless Window, Stays on Bottom (like a desktop widget), Tool (hides from taskbar usually)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint | 
-            Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.Tool
+            Qt.WindowType.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
